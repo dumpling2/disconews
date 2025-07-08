@@ -53,39 +53,75 @@ CHANNEL_ID=<投稿先のDiscordチャンネルID>
 
 ## プロジェクト構造
 ```
-disconews/
+disconeus/
 ├── src/
-│   ├── index.js      # エントリーポイント
-│   ├── bot/          # Discord Bot 関連
-│   │   ├── client.js # Discord クライアント設定
-│   │   └── commands/ # コマンド実装
-│   ├── news/         # ニュース取得機能
-│   │   ├── rss.js    # RSS フィード処理
-│   │   ├── api.js    # News API 統合
-│   │   └── scraper.js # Webスクレイピング
-│   └── utils/        # ユーティリティ
-│       ├── filter.js  # ニュースフィルタリング
-│       └── format.js  # メッセージフォーマット
-├── config/           # 設定ファイル
-│   └── sources.json  # ニュースソース設定
-├── tests/            # テストコード
-├── .env.example      # 環境変数の例
-├── .gitignore        # Git除外設定
-├── package.json      # プロジェクト設定
-└── README.md         # プロジェクトドキュメント
+│   ├── index.js              # エントリーポイント・メインロジック
+│   ├── bot/                  # Discord Bot 関連
+│   │   ├── commandHandler.js # スラッシュコマンド管理
+│   │   └── commands/         # 個別コマンド実装
+│   │       ├── news.js       # /news コマンド
+│   │       └── status.js     # /status コマンド
+│   ├── news/                 # ニュース・コンテンツ取得
+│   │   ├── rss.js           # RSS フィード処理
+│   │   └── scraper.js       # ゲームサイトスクレイピング
+│   └── utils/                # 共通ユーティリティ
+│       ├── filter.js         # AI関連キーワードフィルタリング
+│       ├── format.js         # Discord埋め込みフォーマット
+│       ├── errorHandler.js   # 包括的エラーハンドリング
+│       ├── performance.js    # パフォーマンス監視
+│       └── cache.js          # メモリキャッシュシステム
+├── config/
+│   └── sources.json          # ニュースソースとゲーム設定
+├── tests/                    # テストスイート
+│   ├── rss.test.js          # RSS機能テスト
+│   └── filter.test.js       # フィルタリングテスト
+├── .env.example              # 環境変数テンプレート
+├── .eslintrc.json           # ESLint設定（Airbnb base）
+├── package.json              # プロジェクト依存関係
+└── README.md                 # プロジェクトドキュメント
 ```
 
 ## アーキテクチャ概要
-- **モジュラー設計**: 機能ごとに分離されたモジュール
-- **非同期処理**: Promise/async-await による効率的な並列処理
-- **エラーハンドリング**: 各レイヤーでの適切なエラー処理
-- **設定の外部化**: 環境変数と設定ファイルによる柔軟な構成
+- **モジュラー設計**: 8つの主要モジュールに機能分離
+- **非同期処理**: Promise/async-await による並列ニュース取得
+- **エラーハンドリング**: 4段階エラーレベル（LOW/MEDIUM/HIGH/CRITICAL）
+- **パフォーマンス監視**: リアルタイムメトリクス収集とアラート
+- **メモリ管理**: 自動キャッシュクリーンアップ機能
+- **拡張性**: プラグイン方式のコマンドシステム
 
 ## 開発時の注意事項
 - Discord Token は絶対にコミットしない
-- .env ファイルは .gitignore に含める
+- .env ファイルは .gitignore に含める  
 - ニュース取得のレート制限に注意
-- エラーハンドリングを適切に実装
+- Puppeteerのメモリリーク対策（browser.close()の確実な実行）
+- エラーハンドリングは ErrorHandler クラスを使用
+- パフォーマンス監視で重い処理を特定
+- キャッシュの適切な TTL 設定
+
+## 主要モジュールの詳細
+
+### src/news/scraper.js
+- Puppeteer による動的サイトスクレイピング
+- 静的HTML解析（Cheerio使用）
+- 複数ゲームサイトの並列処理
+- 日付フォーマット自動認識
+
+### src/utils/errorHandler.js  
+- 4段階エラーレベル管理
+- 自動リトライ機能（指数バックオフ）
+- 管理者通知システム
+- 緊急時自動シャットダウン
+
+### src/utils/performance.js
+- 操作時間・メモリ使用量監視
+- パフォーマンス警告システム
+- メトリクス自動収集
+- システム情報取得
+
+### src/bot/commandHandler.js
+- スラッシュコマンド自動登録
+- エラー時の適切な応答
+- インタラクション処理の統一化
 
 <language>Japanese</language>
 <character_code>UTF-8</character_code>
