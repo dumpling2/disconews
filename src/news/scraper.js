@@ -219,14 +219,10 @@ async function scrapeDynamicSite(url, selector, source) {
             description = element.textContent?.trim() || '';
           }
           
-          // サムネイル画像を探す（最優先で実行）
-          let imageUrl = '';
-          
-          // 各カード要素の最初の画像を取得
+          // サムネイル画像を探す（最優先で实行）
           const firstImg = element.querySelector('img');
           if (firstImg && firstImg.src) {
             imageUrl = firstImg.src;
-            console.log(`Found first image in card: ${imageUrl.substring(0, 80)}`);
           }
           
           // 日付を探す
@@ -278,6 +274,12 @@ async function scrapeDynamicSite(url, selector, source) {
           link = linkEl?.href;
           description = descEl?.textContent?.trim() || '';
           dateText = dateEl?.textContent?.trim() || '';
+          
+          // 通常サイトでも画像を取得
+          const firstImg = element.querySelector('img');
+          if (firstImg && firstImg.src) {
+            imageUrl = firstImg.src;
+          }
         }
         
         // LoL専用のメインパッチノートフィルター
