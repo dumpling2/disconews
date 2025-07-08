@@ -1,0 +1,60 @@
+{
+  "rssFeeds": [
+    {
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "enabled": true
+    },
+    {
+      "name": "MIT Technology Review AI",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+      "enabled": true
+    },
+    {
+      "name": "The Verge AI",
+      "url": "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml",
+      "enabled": true
+    },
+    {
+      "name": "VentureBeat AI",
+      "url": "https://venturebeat.com/ai/feed/",
+      "enabled": true
+    },
+    {
+      "name": "OpenAI Blog",
+      "url": "https://openai.com/blog/rss/",
+      "enabled": true
+    }
+  ],
+  "gamePatches": [
+    {
+      "name": "League of Legends",
+      "url": "https://www.leagueoflegends.com/en-us/news/game-updates/",
+      "type": "dynamic",
+      "selector": ".article-card",
+      "enabled": false
+    },
+    {
+      "name": "Valorant",
+      "url": "https://playvalorant.com/en-us/news/game-updates/",
+      "type": "dynamic",
+      "selector": ".news-card",
+      "enabled": false
+    }
+  ],
+  "customKeywords": [
+    "AI",
+    "ChatGPT",
+    "Claude",
+    "Gemini",
+    "LLM",
+    "Machine Learning",
+    "Deep Learning",
+    "Neural Network"
+  ],
+  "filterSettings": {
+    "minRelevanceScore": 20,
+    "maxArticlesPerFetch": 10,
+    "excludeDuplicates": true
+  }
+}
