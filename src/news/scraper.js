@@ -241,12 +241,42 @@ async function scrapeDynamicSite(url, selector, source) {
           dateText = dateEl?.textContent?.trim() || '';
         }
         
-        // LoL専用の緩い検証条件
+        // LoL専用のメインパッチノートフィルター
         let shouldAdd = false;
         if (sourceName.includes('League of Legends')) {
-          // LoLは非常に緩い条件で通す
-          shouldAdd = (title && title.length > 1) || (link && link.includes('leagueoflegends.com'));
-          console.log(`LoL validation ${index}: title="${title?.substring(0, 30)}", link="${link?.substring(0, 50)}", shouldAdd=${shouldAdd}`);
+          // メインパッチノートのみを対象とする厳格なフィルター
+          const isMainPatchNote = title && (
+            // 「パッチノート XX.XX」形式
+            /^パッチノート\s+\d+\.\d+/.test(title) ||
+            /^Patch\s+\d+\.\d+\s+Notes?/i.test(title) ||
+            // 数字.数字で始まるタイトル（25.13など）
+            /^\d+\.\d+/.test(title)
+          );
+          
+          // 除外するキーワード
+          const excludeKeywords = [
+            'チームファイト',
+            'タクティクス',
+            'TFT',
+            'スポットライト',
+            'シネマティック', 
+            'テーマ紹介',
+            'スキル紹介',
+            'ちび',
+            'バッシュ',
+            'アリーナ',
+            '復活',
+            'Year',
+            'YEAR'
+          ];
+          
+          const hasExcludeKeyword = excludeKeywords.some(keyword => 
+            title?.includes(keyword)
+          );
+          
+          shouldAdd = isMainPatchNote && !hasExcludeKeyword && link;
+          
+          console.log(`LoL patch filter ${index}: title="${title?.substring(0, 50)}", isMainPatch=${isMainPatchNote}, hasExclude=${hasExcludeKeyword}, shouldAdd=${shouldAdd}`);
         } else {
           // 通常サイトは従来通り
           shouldAdd = title && title.length > 2 && link;
