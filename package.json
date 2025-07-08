@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "background": "nohup node src/index.js > bot.log 2>&1 &",
+    "stop": "pkill -f 'node src/index.js'",
+    "logs": "tail -f bot.log",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.js",

@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 ## 必ず行うこと
 - 開発後必ずテストを行う
+- 起動して確認する際はバックグラウンド起動を行う
 - テスト後git,githubにコミットプッシュを行う
 - ドキュメントの更新を行う
 
@@ -16,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - axios - HTTP クライアント
   - rss-parser - RSS フィード解析
   - puppeteer - 動的サイト対応（ゲームパッチノート）
+  - playwright - サイト構造分析用（開発時）
   - cheerio - HTML 解析
   - node-cron - スケジューリング
 - **主要機能**:
@@ -105,6 +107,11 @@ disconeus/
 - 静的HTML解析（Cheerio使用）
 - 複数ゲームサイトの並列処理
 - 日付フォーマット自動認識
+- **LoL専用機能**: 
+  - 高度なセレクタ検出（`[data-testid*="card"]`等）
+  - 柔軟なコンテンツ抽出ロジック
+  - 複数の日付形式対応
+  - 97要素から3件のパッチノート成功抽出
 
 ### src/utils/errorHandler.js  
 - 4段階エラーレベル管理

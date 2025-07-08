@@ -59,9 +59,9 @@ client.once('ready', async () => {
     await fetchAndPostNews();
   });
   
-  // 初回実行
-  console.log('🚀 Initial news fetch...');
-  await fetchAndPostNews();
+  // 初回実行（コメントアウト - 手動またはスケジュールのみ）
+  // console.log('🚀 Initial news fetch...');
+  // await fetchAndPostNews();
 });
 
 // インタラクション（コマンド）の処理

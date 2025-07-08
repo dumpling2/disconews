@@ -12,6 +12,7 @@ AI関連のニュースやゲームのパッチノートを自動取得してDis
 
 ### 🎮 ゲームパッチノート取得
 - **動的サイト対応**: Puppeteer による JavaScript レンダリング
+- **League of Legends 対応**: 高度なセレクタ検出とコンテンツ抽出
 - **静的サイト対応**: 高速な HTML パース処理
 - **日付解析**: 多様な日付形式の自動認識
 - **パフォーマンス最適化**: 画像・CSS読み込みの無効化
@@ -71,10 +72,10 @@ cp .env.example .env
   "gamePatches": [
     {
       "name": "League of Legends",
-      "url": "https://www.leagueoflegends.com/en-us/news/game-updates/",
+      "url": "https://www.leagueoflegends.com/ja-jp/news/game-updates/",
       "type": "dynamic",
       "selector": ".article-card",
-      "enabled": false
+      "enabled": true
     }
   ]
 }
@@ -169,6 +170,7 @@ disconews/
 - **コード行数**: 2000行以上
 - **モジュール数**: 8つの主要モジュール
 - **サポート形式**: RSS、動的HTML、静的HTML
+- **LoL対応**: 97要素検出から3件成功抽出（実証済み）
 
 ## ライセンス
 
