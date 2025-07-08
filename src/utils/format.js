@@ -56,6 +56,11 @@ function formatSummaryEmbed(articles, title = 'AI News Summary') {
     .setTimestamp()
     .setFooter({ text: `${articles.length}件のニュース` });
 
+  // 最初の記事に画像があればサムネイルとして表示
+  if (articles.length > 0 && articles[0].imageUrl) {
+    embed.setThumbnail(articles[0].imageUrl);
+  }
+
   // 最大25件までフィールドとして追加
   const displayArticles = articles.slice(0, 25);
 
