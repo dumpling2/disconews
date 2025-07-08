@@ -112,6 +112,10 @@ async function scrapeDynamicSite(url, selector, source) {
     console.log('⏳ コンテンツ読み込み待機中...');
     await page.waitForTimeout(8000);
     
+    // 画像の読み込み完了を待機
+    console.log('🖼️ 画像読み込み待機中...');
+    await page.waitForTimeout(5000);
+    
     // LoL専用の高度なセレクタ検出
     let finalSelector = selector;
     if (source.includes('League of Legends') || source.includes('LoL')) {
@@ -157,11 +161,15 @@ async function scrapeDynamicSite(url, selector, source) {
       console.log(`Found ${elements.length} elements with selector: ${sel}`);
       
       elements.forEach((element, index) => {
-        let title, link, description, dateText;
+        let title, link, description, dateText, imageUrl = '';
         
         // LoL専用の抽出ロジック
         if (sourceName.includes('League of Legends')) {
           console.log(`Processing LoL element ${index}:`, element.innerHTML?.substring(0, 200));
+          
+          // 要素内の画像を確認
+          const imgs = element.querySelectorAll('img');
+          console.log(`Element ${index} has ${imgs.length} images`);
           
           // 要素内のリンクを探す
           const linkEl = element.querySelector('a') || element;
@@ -227,7 +235,38 @@ async function scrapeDynamicSite(url, selector, source) {
             }
           }
           
-          console.log(`LoL element ${index}: title="${title}", link="${link}", desc="${description?.substring(0, 50)}"`);
+          // サムネイル画像を探す（LoL専用：最初の有効な画像を取得）
+          let imageUrl = '';
+          
+          // 各カード要素の最初の画像を取得
+          const firstImg = element.querySelector('img');
+          if (firstImg && firstImg.src) {
+            imageUrl = firstImg.src;
+            console.log(`Found first image in card: ${imageUrl.substring(0, 80)}`);
+          }
+          
+          // 背景画像も確認
+          if (!imageUrl) {
+            const bgElements = element.querySelectorAll('[style*="background-image"], [class*="bg-"], [data-bg-src]');
+            for (const bgEl of bgElements) {
+              if (bgEl.style.backgroundImage) {
+                const urlMatch = bgEl.style.backgroundImage.match(/url\(["']?([^"')]+)["']?\)/);
+                if (urlMatch && urlMatch[1]) {
+                  imageUrl = urlMatch[1];
+                  console.log(`Found background image: ${imageUrl.substring(0, 50)}`);
+                  break;
+                }
+              }
+              // data-bg-src属性もチェック
+              if (bgEl.dataset?.bgSrc) {
+                imageUrl = bgEl.dataset.bgSrc;
+                console.log(`Found data-bg-src: ${imageUrl.substring(0, 50)}`);
+                break;
+              }
+            }
+          }
+          
+          console.log(`LoL element ${index}: title="${title}", link="${link}", image="${imageUrl?.substring(0, 50)}", desc="${description?.substring(0, 50)}"`);
         } else {
           // 通常のサイト用
           const titleEl = element.querySelector('h2, h3, .title, [class*="title"]');
@@ -291,11 +330,22 @@ async function scrapeDynamicSite(url, selector, source) {
             fullLink = baseUrl; // フォールバック
           }
           
+          // 画像URLも絶対URLに変換
+          let fullImageUrl = '';
+          if (imageUrl) {
+            try {
+              fullImageUrl = imageUrl.startsWith('http') ? imageUrl : new URL(imageUrl, baseUrl).href;
+            } catch (e) {
+              fullImageUrl = ''; // 無効な画像URLは空にする
+            }
+          }
+          
           results.push({
             title: title?.substring(0, 200) || `記事 ${index + 1}`,
             link: fullLink,
             description: description?.substring(0, 500) || '',
             dateText: dateText || '',
+            imageUrl: fullImageUrl,
             source: sourceName,
             feedUrl: baseUrl,
           });

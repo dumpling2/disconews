@@ -21,6 +21,11 @@ function formatArticleEmbed(article) {
     embed.setColor(0x0099FF); // デフォルトの青色
   }
 
+  // サムネイル画像があれば追加
+  if (article.imageUrl) {
+    embed.setThumbnail(article.imageUrl);
+  }
+
   // 著者情報があれば追加
   if (article.author) {
     embed.setAuthor({ name: truncate(article.author, 256) });
