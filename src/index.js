@@ -6,8 +6,11 @@ const path = require('path');
 
 // モジュールのインポート
 const { fetchMultipleFeeds, removeDuplicates } = require('./news/rss');
+const { scrapeMultipleGames } = require('./news/scraper');
 const { filterAINews } = require('./utils/filter');
 const { formatArticleEmbed, formatSummaryEmbed, formatErrorEmbed } = require('./utils/format');
+const { initializeCommands, registerSlashCommands, handleInteraction } = require('./bot/commandHandler');
+const { ErrorHandler, ERROR_LEVELS } = require('./utils/errorHandler');
 
 // Discord クライアントの初期化
 const client = new Client({
@@ -19,6 +22,7 @@ const client = new Client({
 
 // 設定ファイルの読み込み
 let config = null;
+let errorHandler = null;
 
 async function loadConfig() {
   try {
@@ -39,6 +43,13 @@ client.once('ready', async () => {
   // 設定ファイルの読み込み
   await loadConfig();
   
+  // エラーハンドラーの初期化
+  errorHandler = new ErrorHandler(client, config);
+  
+  // コマンドの初期化
+  initializeCommands(client);
+  await registerSlashCommands(client);
+  
   // 定期実行の設定（デフォルト: 1時間ごと）
   const interval = process.env.POST_INTERVAL || 60;
   const cronExpression = `*/${interval} * * * *`;
@@ -51,6 +62,11 @@ client.once('ready', async () => {
   // 初回実行
   console.log('🚀 Initial news fetch...');
   await fetchAndPostNews();
+});
+
+// インタラクション（コマンド）の処理
+client.on('interactionCreate', async (interaction) => {
+  await handleInteraction(interaction, config);
 });
 
 // ニュース取得と投稿
@@ -76,25 +92,40 @@ async function fetchAndPostNews() {
     
     console.log(`📡 Fetching from ${enabledFeeds.length} RSS feeds...`);
     
+    let allArticles = [];
+    
     // RSSフィードから記事を取得
-    let articles = await fetchMultipleFeeds(enabledFeeds);
-    console.log(`📰 Fetched ${articles.length} articles`);
+    if (enabledFeeds.length > 0) {
+      const rssArticles = await fetchMultipleFeeds(enabledFeeds);
+      console.log(`📰 RSS記事取得: ${rssArticles.length}件`);
+      
+      // AI関連記事をフィルタリング
+      const aiArticles = filterAINews(rssArticles, config.filterSettings.minRelevanceScore);
+      console.log(`🤖 AI関連記事: ${aiArticles.length}件`);
+      allArticles.push(...aiArticles);
+    }
+    
+    // ゲームパッチノートを取得
+    const enabledGames = config.gamePatches?.filter(game => game.enabled) || [];
+    if (enabledGames.length > 0) {
+      console.log(`🎮 ${enabledGames.length}個のゲームからパッチノートを取得中...`);
+      const gameArticles = await scrapeMultipleGames(enabledGames);
+      console.log(`🎮 ゲームパッチノート: ${gameArticles.length}件`);
+      allArticles.push(...gameArticles);
+    }
     
     // 重複を除去
-    articles = removeDuplicates(articles);
-    console.log(`🔍 After removing duplicates: ${articles.length} articles`);
+    allArticles = removeDuplicates(allArticles);
+    console.log(`🔍 重複除去後: ${allArticles.length}件`);
     
-    // AI関連記事をフィルタリング
-    const aiArticles = filterAINews(articles, config.filterSettings.minRelevanceScore);
-    console.log(`🤖 Found ${aiArticles.length} AI-related articles`);
-    
-    if (aiArticles.length === 0) {
-      console.log('ℹ️  No AI-related news found in this fetch');
+    if (allArticles.length === 0) {
+      console.log('ℹ️ 投稿する記事が見つかりませんでした');
       return;
     }
     
-    // 最新記事を選択（設定された最大数まで）
-    const articlesToPost = aiArticles.slice(0, config.filterSettings.maxArticlesPerFetch);
+    // 日付順にソートして最新記事を選択
+    allArticles.sort((a, b) => b.pubDate - a.pubDate);
+    const articlesToPost = allArticles.slice(0, config.filterSettings.maxArticlesPerFetch);
     
     // 各記事を個別に投稿
     for (const article of articlesToPost) {
