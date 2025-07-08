@@ -103,44 +103,170 @@ async function scrapeDynamicSite(url, selector, source) {
       }
     });
 
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-    // ページの読み込み完了を待機
-    await page.waitForSelector(selector, { timeout: 10000 });
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    console.log(`🌐 ナビゲート中: ${url}`);
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    
+    // より長い待機時間でJavaScriptの完全読み込みを待機
+    console.log('⏳ コンテンツ読み込み待機中...');
+    await page.waitForTimeout(8000);
+    
+    // LoL専用の高度なセレクタ検出
+    let finalSelector = selector;
+    if (source.includes('League of Legends') || source.includes('LoL')) {
+      console.log('🎮 LoL専用セレクタ検出を実行中...');
+      
+      const lolSelectors = [
+        '[data-testid*="card"]',
+        '.sc-985df63-0.cGQgsO',
+        'a[href*="patch"]',
+        'a[class*="action"]',
+        selector // 元のセレクタも試行
+      ];
+      
+      for (const testSelector of lolSelectors) {
+        try {
+          await page.waitForSelector(testSelector, { timeout: 5000 });
+          const elementCount = await page.$$eval(testSelector, els => els.length);
+          console.log(`✓ セレクタ "${testSelector}" で${elementCount}個の要素を発見`);
+          
+          if (elementCount > 0) {
+            finalSelector = testSelector;
+            break;
+          }
+        } catch (e) {
+          console.log(`✗ セレクタ "${testSelector}" は見つかりませんでした`);
+        }
+      }
+    } else {
+      // 通常のサイト用
+      try {
+        await page.waitForSelector(selector, { timeout: 15000 });
+      } catch (error) {
+        console.log(`⚠️ セレクタ ${selector} が見つからないため、代替方法を試行中...`);
+        await page.waitForSelector('body', { timeout: 10000 });
+      }
+    }
 
     // 記事情報を抽出
     const articles = await page.evaluate((sel, sourceName, baseUrl) => {
       const elements = document.querySelectorAll(sel);
       const results = [];
 
+      console.log(`Found ${elements.length} elements with selector: ${sel}`);
+      
       elements.forEach((element, index) => {
         if (index >= 10) return; // 最新10件まで
-
-        const titleEl = element.querySelector('h2, h3, .title, [class*="title"]');
-        const linkEl = element.querySelector('a');
-        const descEl = element.querySelector('p, .description, .excerpt, .summary');
-        const dateEl = element.querySelector('.date, time, [class*="date"]');
-
-        const title = titleEl?.textContent?.trim();
-        const link = linkEl?.href;
-        const description = descEl?.textContent?.trim() || '';
-        const dateText = dateEl?.textContent?.trim() || '';
-
-        if (title && link) {
+        
+        let title, link, description, dateText;
+        
+        // LoL専用の抽出ロジック
+        if (sourceName.includes('League of Legends')) {
+          console.log(`Processing LoL element ${index}:`, element.innerHTML?.substring(0, 200));
+          
+          // 要素内のリンクを探す
+          const linkEl = element.querySelector('a') || element;
+          link = linkEl?.href;
+          
+          // タイトルを探す（様々なセレクタを試行）
+          const titleSelectors = [
+            'h1, h2, h3, h4, h5, h6',
+            '[class*="title"]',
+            '[class*="headline"]',
+            '[data-testid*="title"]',
+            '.action',
+            'a'
+          ];
+          
+          for (const selector of titleSelectors) {
+            const titleEl = element.querySelector(selector);
+            if (titleEl?.textContent?.trim()) {
+              title = titleEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // タイトルが見つからない場合、要素全体のテキストを使用
+          if (!title) {
+            const fullText = element.textContent?.trim() || '';
+            title = fullText.split('\n')[0]?.trim() || fullText.substring(0, 100);
+          }
+          
+          // 説明文を探す
+          const descSelectors = [
+            'p',
+            '.description',
+            '[class*="desc"]',
+            '[class*="summary"]'
+          ];
+          
+          for (const selector of descSelectors) {
+            const descEl = element.querySelector(selector);
+            if (descEl?.textContent?.trim()) {
+              description = descEl.textContent.trim();
+              break;
+            }
+          }
+          
+          if (!description) {
+            description = element.textContent?.trim() || '';
+          }
+          
+          // 日付を探す
+          const allText = element.textContent || '';
+          const datePatterns = [
+            /\d{1,2}\/\d{1,2}\/\d{4}/,
+            /\d{4}-\d{1,2}-\d{1,2}/,
+            /\w+\s+\d{1,2},\s+\d{4}/
+          ];
+          
+          for (const pattern of datePatterns) {
+            const dateMatch = allText.match(pattern);
+            if (dateMatch) {
+              dateText = dateMatch[0];
+              break;
+            }
+          }
+          
+          console.log(`LoL element ${index}: title="${title}", link="${link}", desc="${description?.substring(0, 50)}"`);
+        } else {
+          // 通常のサイト用
+          const titleEl = element.querySelector('h2, h3, .title, [class*="title"]');
+          const linkEl = element.querySelector('a');
+          const descEl = element.querySelector('p, .description, .excerpt, .summary');
+          const dateEl = element.querySelector('.date, time, [class*="date"]');
+          
+          title = titleEl?.textContent?.trim();
+          link = linkEl?.href;
+          description = descEl?.textContent?.trim() || '';
+          dateText = dateEl?.textContent?.trim() || '';
+        }
+        
+        // より柔軟な検証条件
+        if (title && title.length > 2 && link) {
+          // 相対URLを絶対URLに変換
+          const fullLink = link.startsWith('http') ? link : new URL(link, baseUrl).href;
+          
           results.push({
-            title,
-            link: link.startsWith('http') ? link : new URL(link, baseUrl).href,
-            description,
-            dateText,
+            title: title.substring(0, 200),
+            link: fullLink,
+            description: description?.substring(0, 500) || '',
+            dateText: dateText || '',
             source: sourceName,
             feedUrl: baseUrl,
           });
+          
+          console.log(`Added article: "${title.substring(0, 50)}..."`);
+        } else {
+          console.log(`Skipped element ${index}: title="${title}", link="${link}"`);
         }
       });
+      
+      console.log(`Extracted ${results.length} valid articles from ${elements.length} elements`);
 
       return results;
-    }, selector, source, url);
+    }, finalSelector, source, url);
 
     // 日付を解析
     const processedArticles = articles.map((article) => ({

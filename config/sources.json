@@ -2,38 +2,22 @@
   "rssFeeds": [
     {
       "name": "TechCrunch AI",
-      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
-      "enabled": true
-    },
-    {
-      "name": "MIT Technology Review AI",
-      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
-      "enabled": true
-    },
-    {
-      "name": "The Verge AI",
-      "url": "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml",
-      "enabled": true
-    },
-    {
-      "name": "VentureBeat AI",
-      "url": "https://venturebeat.com/ai/feed/",
+      "url": "https://codezine.jp/rss/new/20/index.xml",
       "enabled": true
     },
     {
       "name": "OpenAI Blog",
-      "url": "https://openai.com/blog/rss/",
+      "url": "https://openai.com/news/rss.xml",
       "enabled": true
     }
   ],
   "gamePatches": [
     {
       "name": "League of Legends",
-      "url": "https://www.leagueoflegends.com/en-us/news/game-updates/",
+      "url": "https://www.leagueoflegends.com/ja-jp/news/game-updates/",
       "type": "dynamic",
       "selector": ".article-card",
-      "enabled": false,
-      "note": "現在サイト構造の変更により一時的に無効化。RSS版またはAPI版を検討中"
+      "enabled": true
     },
     {
       "name": "Valorant",
@@ -41,20 +25,6 @@
       "type": "dynamic",
       "selector": ".news-card",
       "enabled": false
-    },
-    {
-      "name": "Steam News",
-      "url": "https://store.steampowered.com/feeds/news.xml",
-      "type": "rss",
-      "enabled": true,
-      "note": "Steam の RSS フィード版 - より安定"
-    },
-    {
-      "name": "IGN Game News",
-      "url": "https://feeds.ign.com/ign/games-all",
-      "type": "rss", 
-      "enabled": true,
-      "note": "IGN ゲームニュース RSS - 安定したソース"
     }
   ],
   "customKeywords": [
