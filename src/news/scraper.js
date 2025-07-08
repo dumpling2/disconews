@@ -157,8 +157,6 @@ async function scrapeDynamicSite(url, selector, source) {
       console.log(`Found ${elements.length} elements with selector: ${sel}`);
       
       elements.forEach((element, index) => {
-        if (index >= 10) return; // 最新10件まで
-        
         let title, link, description, dateText;
         
         // LoL専用の抽出ロジック
@@ -243,13 +241,28 @@ async function scrapeDynamicSite(url, selector, source) {
           dateText = dateEl?.textContent?.trim() || '';
         }
         
-        // より柔軟な検証条件
-        if (title && title.length > 2 && link) {
+        // LoL専用の緩い検証条件
+        let shouldAdd = false;
+        if (sourceName.includes('League of Legends')) {
+          // LoLは非常に緩い条件で通す
+          shouldAdd = (title && title.length > 1) || (link && link.includes('leagueoflegends.com'));
+          console.log(`LoL validation ${index}: title="${title?.substring(0, 30)}", link="${link?.substring(0, 50)}", shouldAdd=${shouldAdd}`);
+        } else {
+          // 通常サイトは従来通り
+          shouldAdd = title && title.length > 2 && link;
+        }
+        
+        if (shouldAdd) {
           // 相対URLを絶対URLに変換
-          const fullLink = link.startsWith('http') ? link : new URL(link, baseUrl).href;
+          let fullLink;
+          try {
+            fullLink = link && link.startsWith('http') ? link : new URL(link || '', baseUrl).href;
+          } catch (e) {
+            fullLink = baseUrl; // フォールバック
+          }
           
           results.push({
-            title: title.substring(0, 200),
+            title: title?.substring(0, 200) || `記事 ${index + 1}`,
             link: fullLink,
             description: description?.substring(0, 500) || '',
             dateText: dateText || '',
@@ -257,9 +270,15 @@ async function scrapeDynamicSite(url, selector, source) {
             feedUrl: baseUrl,
           });
           
-          console.log(`Added article: "${title.substring(0, 50)}..."`);
+          console.log(`Added article ${results.length}: "${title?.substring(0, 50) || 'No title'}..."`);
         } else {
-          console.log(`Skipped element ${index}: title="${title}", link="${link}"`);
+          console.log(`Skipped element ${index}: title="${title?.substring(0, 30) || 'No title'}", link="${link?.substring(0, 50) || 'No link'}"`);
+        }
+        
+        // LoL専用：十分な記事が集まったら処理終了
+        if (sourceName.includes('League of Legends') && results.length >= 10) {
+          console.log(`LoL: 10件の記事を取得完了、処理を終了`);
+          return;
         }
       });
       
