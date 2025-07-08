@@ -219,6 +219,16 @@ async function scrapeDynamicSite(url, selector, source) {
             description = element.textContent?.trim() || '';
           }
           
+          // サムネイル画像を探す（最優先で実行）
+          let imageUrl = '';
+          
+          // 各カード要素の最初の画像を取得
+          const firstImg = element.querySelector('img');
+          if (firstImg && firstImg.src) {
+            imageUrl = firstImg.src;
+            console.log(`Found first image in card: ${imageUrl.substring(0, 80)}`);
+          }
+          
           // 日付を探す
           const allText = element.textContent || '';
           const datePatterns = [
@@ -233,16 +243,6 @@ async function scrapeDynamicSite(url, selector, source) {
               dateText = dateMatch[0];
               break;
             }
-          }
-          
-          // サムネイル画像を探す（LoL専用：最初の有効な画像を取得）
-          let imageUrl = '';
-          
-          // 各カード要素の最初の画像を取得
-          const firstImg = element.querySelector('img');
-          if (firstImg && firstImg.src) {
-            imageUrl = firstImg.src;
-            console.log(`Found first image in card: ${imageUrl.substring(0, 80)}`);
           }
           
           // 背景画像も確認
@@ -283,13 +283,13 @@ async function scrapeDynamicSite(url, selector, source) {
         // LoL専用のメインパッチノートフィルター
         let shouldAdd = false;
         if (sourceName.includes('League of Legends')) {
-          // メインパッチノートのみを対象とする厳格なフィルター
+          // メインパッチノートの検出（より柔軟に）
           const isMainPatchNote = title && (
             // 「パッチノート XX.XX」形式
-            /^パッチノート\s+\d+\.\d+/.test(title) ||
-            /^Patch\s+\d+\.\d+\s+Notes?/i.test(title) ||
-            // 数字.数字で始まるタイトル（25.13など）
-            /^\d+\.\d+/.test(title)
+            /パッチノート\s*\d+\.\d+/i.test(title) ||
+            /Patch\s*\d+\.\d+/i.test(title) ||
+            // 数字.数字を含む（より柔軟）
+            /\d+\.\d+/.test(title)
           );
           
           // 除外するキーワード
@@ -315,7 +315,7 @@ async function scrapeDynamicSite(url, selector, source) {
           
           shouldAdd = isMainPatchNote && !hasExcludeKeyword && link;
           
-          console.log(`LoL patch filter ${index}: title="${title?.substring(0, 50)}", isMainPatch=${isMainPatchNote}, hasExclude=${hasExcludeKeyword}, shouldAdd=${shouldAdd}`);
+          console.log(`LoL patch filter ${index}: title="${title?.substring(0, 50)}", isMainPatch=${isMainPatchNote}, hasExclude=${hasExcludeKeyword}, hasImage=${!!imageUrl}, imgSrc="${imageUrl?.substring(0, 40)}", shouldAdd=${shouldAdd}`);
         } else {
           // 通常サイトは従来通り
           shouldAdd = title && title.length > 2 && link;
@@ -355,9 +355,9 @@ async function scrapeDynamicSite(url, selector, source) {
           console.log(`Skipped element ${index}: title="${title?.substring(0, 30) || 'No title'}", link="${link?.substring(0, 50) || 'No link'}"`);
         }
         
-        // LoL専用：十分な記事が集まったら処理終了
-        if (sourceName.includes('League of Legends') && results.length >= 10) {
-          console.log(`LoL: 10件の記事を取得完了、処理を終了`);
+        // LoL専用：十分な記事が集まったら処理終了（メインパッチノートが後の方にあるため制限を緩和）
+        if (sourceName.includes('League of Legends') && results.length >= 5) {
+          console.log(`LoL: 5件のメインパッチノートを取得完了、処理を終了`);
           return;
         }
       });
@@ -366,6 +366,11 @@ async function scrapeDynamicSite(url, selector, source) {
 
       return results;
     }, finalSelector, source, url);
+
+    console.log(`🎯 Raw articles from page.evaluate: ${articles.length}`);
+    articles.forEach((article, index) => {
+      console.log(`  ${index + 1}. ${article.title?.substring(0, 50)} - Image: ${article.imageUrl ? 'YES' : 'NO'}`);
+    });
 
     // 日付を解析
     const processedArticles = articles.map((article) => ({
