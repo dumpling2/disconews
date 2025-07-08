@@ -105,12 +105,33 @@ async function fetchAndPostNews() {
       allArticles.push(...aiArticles);
     }
     
-    // ゲームパッチノートを取得
+    // ゲーム関連ニュースを取得
     const enabledGames = config.gamePatches?.filter(game => game.enabled) || [];
     if (enabledGames.length > 0) {
-      console.log(`🎮 ${enabledGames.length}個のゲームからパッチノートを取得中...`);
-      const gameArticles = await scrapeMultipleGames(enabledGames);
-      console.log(`🎮 ゲームパッチノート: ${gameArticles.length}件`);
+      console.log(`🎮 ${enabledGames.length}個のゲームソースから取得中...`);
+      
+      // RSS形式とスクレイピング形式を分離
+      const rssGames = enabledGames.filter(game => game.type === 'rss');
+      const dynamicGames = enabledGames.filter(game => game.type === 'dynamic');
+      
+      let gameArticles = [];
+      
+      // RSS形式のゲームニュース
+      if (rssGames.length > 0) {
+        const gameRssUrls = rssGames.map(game => game.url);
+        const rssGameArticles = await fetchMultipleFeeds(gameRssUrls);
+        gameArticles.push(...rssGameArticles);
+        console.log(`🎮 RSS ゲームニュース: ${rssGameArticles.length}件`);
+      }
+      
+      // 動的スクレイピング形式
+      if (dynamicGames.length > 0) {
+        const scrapedArticles = await scrapeMultipleGames(dynamicGames);
+        gameArticles.push(...scrapedArticles);
+        console.log(`🎮 スクレイピング ゲームニュース: ${scrapedArticles.length}件`);
+      }
+      
+      console.log(`🎮 ゲーム関連記事合計: ${gameArticles.length}件`);
       allArticles.push(...gameArticles);
     }
     

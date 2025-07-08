@@ -32,7 +32,8 @@
       "url": "https://www.leagueoflegends.com/en-us/news/game-updates/",
       "type": "dynamic",
       "selector": ".article-card",
-      "enabled": false
+      "enabled": false,
+      "note": "現在サイト構造の変更により一時的に無効化。RSS版またはAPI版を検討中"
     },
     {
       "name": "Valorant",
@@ -40,6 +41,20 @@
       "type": "dynamic",
       "selector": ".news-card",
       "enabled": false
+    },
+    {
+      "name": "Steam News",
+      "url": "https://store.steampowered.com/feeds/news.xml",
+      "type": "rss",
+      "enabled": true,
+      "note": "Steam の RSS フィード版 - より安定"
+    },
+    {
+      "name": "IGN Game News",
+      "url": "https://feeds.ign.com/ign/games-all",
+      "type": "rss", 
+      "enabled": true,
+      "note": "IGN ゲームニュース RSS - 安定したソース"
     }
   ],
   "customKeywords": [
